@@ -10,23 +10,32 @@ localStorage.getItem("global-temperature-data")
 
 function renderChart(data) {
   const dataset = data["monthlyVariance"];
+  const baseTemp = data["baseTemperature"];
+
   const padding = 60;
-  const height = 500;
-  const width = (dataset.length * 3) / 12;
-  const months = [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
+  const height = 600;
+  const width = 1500;
 
   const svg = d3
     .select("div")
     .append("svg")
     .attr("with", width)
     .attr("height", height)
-    .attr("class", "svg");
+    .attr("id", "svg");
 
   const yScale = d3
-    .scaleBand()
-    .domain(months)
-    .range([padding, height - padding]);
-  const yAxis = d3.axisLeft(yScale);
+    .scaleTime()
+    .domain([new Date().setMonth(0), new Date().setMonth(11)])
+    .range([0, height - 100]);
+
+  const yAxis = d3
+    .axisLeft(yScale)
+    .tickValues(
+      Array(12)
+        .fill(0)
+        .map((val, index) => new Date().setMonth(index))
+    )
+    .tickFormat(d3.timeFormat("%B"));
 
   svg
     .append("g")
@@ -36,92 +45,67 @@ function renderChart(data) {
 
   const xMin = d3.min(dataset, (d) => d["year"]);
   const xMax = d3.max(dataset, (d) => d["year"]);
-  const years = [];
-  for (var i = xMin; i <= xMax; i++) {
-    if (i % 10 == 0) {
-      years.push(i);
-    }
-  }
-
   const xScale = d3
     .scaleLinear()
-    .domain(years)
-    .range([padding, width - padding]);
-  const xAxis = d3.axisBottom(xScale);
+    .domain([xMin, xMax])
+    .range([0, width - 200]);
+
+  const xAxis = d3.axisBottom(xScale).tickFormat(d3.format("d"));
 
   svg
     .append("g")
     .attr("id", "x-axis")
-    .attr("transform", "translate(0," + (height - padding) + ")")
-    .call(xAxis);
+    .attr("transform", "translate(0," + height + ")")
+    .call(xAxis.ticks((xMax - xMin) / 10));
 
-  //   const width = dataset.length * 20 + 2 * padding;
-  //   const height = 500;
-  //   const yMin = d3.min(dataset, (d) => formatTime(d["Time"]) - 10);
-  //   const yMax = d3.max(dataset, (d) => formatTime(d["Time"]));
-  //   const yScale = d3
-  //     .scaleLinear()
-  //     .domain([yMin, yMax])
-  //     .range([padding, height - padding]);
-  //   const xMin = d3.min(dataset, (d) => Number(d["year"]) - 1);
-  //   const xMax = d3.max(dataset, (d) => Number(d["year"]));
-  //   const xScale = d3
-  //     .scaleLinear()
-  //     .domain([xMin, Number(xMax) + 1])
-  //     .range([padding, width - padding]);
-  //   const svg = d3
-  //     .select("div")
-  //     .append("svg")
-  //     .attr("width", width)
-  //     .attr("height", height)
-  //     .attr("class", "svg");
-  //   const tootTip = d3.select("body").append("div").attr("id", "tooltip");
-  //   svg
-  //     .selectAll("circle")
-  //     .data(dataset)
-  //     .enter()
-  //     .append("circle")
-  //     .attr("cx", (d) => xScale(d["year"]))
-  //     .attr("cy", (d) => yScale(formatTime(d["Time"])))
-  //     .attr("r", (d) => 5)
-  //     .attr("stroke", "black")
-  //     .attr("stroke-width", 1)
-  //     .attr("class", "dot")
-  //     .attr("data-xvalue", (d) => d["year"])
-  //     .attr("data-yvalue", (d) => formatTime(d["Time"]))
-  //     .attr("fill", (d) => (d["Doping"].length > 0 ? "orange" : "#81A4CD"))
-  //     .on("mouseover", (d) => {
-  //       d3.select("#tooltip")
-  //         .style("opacity", 0.8)
-  //         .attr("data-year", d["year"])
-  //         .text(d["year"] + ": " + d["Name"]);
-  //     })
-  //     .on("mouseout", () => d3.select("#tooltip").style("opacity", 0))
-  //     .on("mousemove", () =>
-  //       d3
-  //         .select("#tooltip")
-  //         .style("left", d3.event.pagex + 20 + "px")
-  //         .style("top", d3.event.pagey - 10 + "px")
-  //     );
-  //   const yAxis = d3
-  //     .axisLeft(yScale)
-  //     .tickFormat(
-  //       (d) => new Date(d).getMinutes() + ":" + addZero(new Date(d).getSeconds())
-  //     );
-  //   svg
-  //     .append("g")
-  //     .attr("id", "y-axis")
-  //     .attr("transform", "translate(" + padding + ", 0)")
-  //     .call(yAxis);
-  //   const xAxis = d3.axisBottom(xScale).tickFormat(d3.format("d"));
-  //   svg
-  //     .append("g")
-  //     .attr("id", "x-axis")
-  //     .attr("transform", "translate(0," + (height - padding) + ")")
-  //     .call(xAxis);
-  //   // Legend
-  //   const legend = d3.select("svg").append("svg").attr("id", "legend");
-  //   const legendMargin = 10;
+  svg
+    .selectAll("rect")
+    .data(dataset)
+    .enter()
+    .append("rect")
+    .attr("x", (d) => xScale(d["year"]))
+    .attr("y", (d) => yScale(new Date().setMonth(d["month"])) - padding)
+    .attr("width", 5)
+    .attr("height", (height - padding) / 12)
+    .attr("fill", (d) => mapTemptoColor(d["variance"]))
+    .attr("class", "cell")
+    .attr("data-year", (d) => d["year"])
+    .attr("data-month", (d) => d["month"] - 1)
+    .attr("data-temp", (d) => d["variance"] * baseTemp)
+    .on("mouseover", function (d) {
+      d3.select("#tooltip")
+        .style("opacity", 0.8)
+        .attr("data-year", d["year"])
+        .text(d["year"]);
+    })
+    .on("mouseout", () => d3.select("#tooltip").style("opacity", 0))
+    .on("mousemove", () =>
+      d3
+        .select("#tooltip")
+        .style("left", d3.event.pageX + 20 + "px")
+        .style("top", d3.event.pageY - 80 + "px")
+    );
+
+  function mapTemptoColor(variance) {
+    if (variance < -1) {
+      return "#3366cc";
+    } else if (variance < 0) {
+      return "#99ccff";
+    } else if (variance < 1) {
+      return "#ffffcc";
+    } else if (variance < 2) {
+      return "#ff9933";
+    } else {
+      return "#cc3300";
+    }
+  }
+
+  // Tooltip
+  const tootTip = d3.select("body").append("div").attr("id", "tooltip");
+
+  // Legend
+  const legend = d3.select("svg").append("svg").attr("id", "legend");
+  const legendMargin = 10;
   //   const legendData = [
   //     {
   //       text: "Doping allegations",
@@ -154,18 +138,4 @@ function renderChart(data) {
   //         .attr("dy", "0.35em")
   //         .text(d.text);
   //     });
-  // }
-  // function formatTime(time) {
-  //   const date = new Date();
-  //   time = time.split(":");
-  //   const min = time[0];
-  //   const sec = time[1];
-  //   date.setMinutes(min, sec, 0);
-  //   return date;
-  // }
-  // function addZero(i) {
-  //   if (i < 10) {
-  //     i = "0" + i;
-  //   }
-  //   return i;
 }
