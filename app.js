@@ -40,7 +40,7 @@ function renderChart(data) {
   svg
     .append("g")
     .attr("id", "y-axis")
-    .attr("transform", "translate(" + padding + ", 0)")
+    .attr("transform", `translate(${padding - 1}, 20)`)
     .call(yAxis);
 
   const xMin = d3.min(dataset, (d) => d["year"]);
@@ -55,7 +55,7 @@ function renderChart(data) {
   svg
     .append("g")
     .attr("id", "x-axis")
-    .attr("transform", "translate(0," + height + ")")
+    .attr("transform", `translate(${padding}, ${height - 50})`)
     .call(xAxis.ticks((xMax - xMin) / 10));
 
   svg
@@ -63,10 +63,10 @@ function renderChart(data) {
     .data(dataset)
     .enter()
     .append("rect")
-    .attr("x", (d) => xScale(d["year"]))
-    .attr("y", (d) => yScale(new Date().setMonth(d["month"])) - padding)
+    .attr("x", (d) => xScale(d["year"]) + padding)
+    .attr("y", (d) => yScale(new Date().setMonth(d["month"] - 1)))
     .attr("width", 5)
-    .attr("height", (height - padding) / 12)
+    .attr("height", height / 12)
     .attr("fill", (d) => mapTemptoColor(d["variance"]))
     .attr("class", "cell")
     .attr("data-year", (d) => d["year"])
