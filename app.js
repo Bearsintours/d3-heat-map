@@ -16,8 +16,9 @@ function renderChart(data) {
   const height = 600;
   const width = 1500;
 
+  // Heat map
   const svg = d3
-    .select("div")
+    .select("#chart")
     .append("svg")
     .attr("with", width)
     .attr("height", height)
@@ -40,7 +41,7 @@ function renderChart(data) {
   svg
     .append("g")
     .attr("id", "y-axis")
-    .attr("transform", `translate(${padding - 1}, 20)`)
+    .attr("transform", `translate(${padding}, 20)`)
     .call(yAxis);
 
   const xMin = d3.min(dataset, (d) => d["year"]);
@@ -67,7 +68,7 @@ function renderChart(data) {
     .attr("y", (d) => yScale(new Date().setMonth(d["month"] - 1)))
     .attr("width", 5)
     .attr("height", height / 12)
-    .attr("fill", (d) => mapTemptoColor(d["variance"]))
+    .attr("fill", (d) => mapTemptoColor(d["variance"] + baseTemp))
     .attr("class", "cell")
     .attr("data-year", (d) => d["year"])
     .attr("data-month", (d) => d["month"] - 1)
@@ -86,56 +87,123 @@ function renderChart(data) {
         .style("top", d3.event.pageY - 80 + "px")
     );
 
-  function mapTemptoColor(variance) {
-    if (variance < -1) {
-      return "#3366cc";
-    } else if (variance < 0) {
-      return "#99ccff";
-    } else if (variance < 1) {
-      return "#ffffcc";
-    } else if (variance < 2) {
-      return "#ff9933";
+  function mapTemptoColor(temp) {
+    if (temp < 2.8) {
+      return "rgb(49, 54, 149)";
+    } else if (temp < 3.9) {
+      return "rgb(69, 117, 180)";
+    } else if (temp < 5) {
+      return "rgb(116, 173, 209)";
+    } else if (temp < 6.1) {
+      return "rgb(171, 217, 233)";
+    } else if (temp < 7.2) {
+      return "rgb(224, 243, 248)";
+    } else if (temp < 8.3) {
+      return "rgb(255, 255, 191)";
+    } else if (temp < 9.5) {
+      return "rgb(254, 224, 144)";
+    } else if (temp < 10.6) {
+      return "rgb(253, 174, 97)";
+    } else if (temp < 11.7) {
+      return "rgb(244, 109, 67)";
+    } else if (temp < 12.8) {
+      return "rgb(215, 48, 39)";
     } else {
-      return "#cc3300";
+      return "rgb(165, 0, 38)";
     }
   }
 
   // Tooltip
-  const tootTip = d3.select("body").append("div").attr("id", "tooltip");
+  d3.select("body").append("div").attr("id", "tooltip");
 
   // Legend
-  const legend = d3.select("svg").append("svg").attr("id", "legend");
-  const legendMargin = 10;
-  //   const legendData = [
-  //     {
-  //       text: "Doping allegations",
-  //       color: "orange",
-  //     },
-  //     {
-  //       text: "No doping allegations",
-  //       color: "#81A4CD",
-  //     },
-  //   ];
-  //   legend
-  //     .selectAll("g.legend")
-  //     .data(legendData)
-  //     .enter()
-  //     .append("g")
-  //     .attr("transform", function (d, i) {
-  //       return "translate(" + 600 + "," + (legendMargin + i * 20) + ")";
-  //     })
-  //     .each(function (d, i) {
-  //       d3.select(this)
-  //         .append("rect")
-  //         .attr("width", 30)
-  //         .attr("height", 15)
-  //         .attr("fill", d.color);
-  //       d3.select(this)
-  //         .append("text")
-  //         .attr("text-anchor", "start")
-  //         .attr("x", 30 + 10)
-  //         .attr("y", 15 / 2)
-  //         .attr("dy", "0.35em")
-  //         .text(d.text);
-  //     });
+  const legend = d3
+    .select("#chart")
+    .append("svg")
+    .attr("id", "legend")
+    .attr("with", 1000)
+    .attr("height", 50);
+
+  const legendData = [
+    {
+      text: "< 2.8",
+      color: "rgb(49, 54, 149)",
+    },
+    {
+      text: "< 3.9",
+      color: "rgb(69, 117, 180)",
+    },
+    {
+      text: "< 5",
+      color: "rgb(116, 173, 209)",
+    },
+    {
+      text: "< 6.1",
+      color: "rgb(171, 217, 233)",
+    },
+    {
+      text: "< 7.2",
+      color: "rgb(224, 243, 248)",
+    },
+    {
+      text: "< 8.3",
+      color: "rgb(255, 255, 191)",
+    },
+    {
+      text: "< 9.5",
+      color: "rgb(254, 224, 144)",
+    },
+    {
+      text: "< 10.6",
+      color: "rgb(253, 174, 97)",
+    },
+    {
+      text: "< 11.7",
+      color: "rgb(244, 109, 67)",
+    },
+    {
+      text: "< 12.8",
+      color: "rgb(215, 48, 39)",
+    },
+    {
+      text: "> 12.8",
+      color: "rgb(165, 0, 38)",
+    },
+  ];
+
+  // const xLegendMin = d3.min(legendData, (d) => d["text"]);
+  // const xLegendMax = d3.max(legendData, (d) => d["text"]);
+
+  // const xLegendScale = d3
+  //   .scaleLinear()
+  //   .domain([xLegendMin, xLegendMax])
+  //   .range([0, width / 2]);
+
+  // const xLegendAxis = d3.axisBottom(xLegendScale);
+
+  // legend.append("g").attr("transform", "translate(20, 20)").call(xLegendAxis);
+
+  legend
+    .selectAll("g.legend")
+    .data(legendData)
+    .enter()
+    .append("g")
+    .attr("transform", function (d, i) {
+      return `translate(${i * 100}, 0)`;
+    })
+    .each(function (d, i) {
+      d3.select(this)
+        .append("rect")
+        .attr("width", 30)
+        .attr("height", 15)
+        .attr("fill", d.color)
+        .attr("stroke", "rgb(0,0,0)");
+      d3.select(this)
+        .append("text")
+        .attr("text-anchor", "start")
+        .attr("x", 30 + 10)
+        .attr("y", 15 / 2)
+        .attr("dy", "0.35em")
+        .text(d.text);
+    });
 }

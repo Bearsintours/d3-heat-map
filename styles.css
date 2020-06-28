@@ -33,6 +33,12 @@ body {
   text-align: center;
 }
 
+#legend {
+  height: auto;
+  width: 100%;
+  margin-left: 110px;
+}
+
 .dot:hover {
   cursor: pointer;
 }
