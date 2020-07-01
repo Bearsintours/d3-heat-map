@@ -1,12 +1,12 @@
+const apiUrl =
+  "https://raw.githubusercontent.com/freeCodeCamp/ProjectReferenceData/master/global-temperature.json";
+
 localStorage.getItem("global-temperature-data")
   ? renderChart(JSON.parse(localStorage.getItem("global-temperature-data")))
-  : d3.json(
-      "https://raw.githubusercontent.com/freeCodeCamp/ProjectReferenceData/master/global-temperature.json",
-      (data) => {
-        localStorage.setItem("global-temparature-data", JSON.stringify(data));
-        renderChart(data);
-      }
-    );
+  : d3.json(apiUrl, (data) => {
+      localStorage.setItem("global-temparature-data", JSON.stringify(data));
+      renderChart(data);
+    });
 
 function renderChart(data) {
   const dataset = data["monthlyVariance"];
@@ -16,7 +16,7 @@ function renderChart(data) {
   const height = 600;
   const width = 1500;
 
-  // Heat map
+  // Create svg
   const svg = d3
     .select("#chart")
     .append("svg")
@@ -24,6 +24,7 @@ function renderChart(data) {
     .attr("height", height)
     .attr("id", "svg");
 
+  // yAxis
   const yScale = d3
     .scaleTime()
     .domain([new Date().setMonth(0), new Date().setMonth(11)])
@@ -44,6 +45,7 @@ function renderChart(data) {
     .attr("transform", `translate(${padding}, 20)`)
     .call(yAxis);
 
+  // xAxis
   const xMin = d3.min(dataset, (d) => d["year"]);
   const xMax = d3.max(dataset, (d) => d["year"]);
   const xScale = d3
@@ -56,9 +58,10 @@ function renderChart(data) {
   svg
     .append("g")
     .attr("id", "x-axis")
-    .attr("transform", `translate(${padding}, ${height - 50})`)
+    .attr("transform", `translate(${padding}, ${height - 54})`)
     .call(xAxis.ticks((xMax - xMin) / 10));
 
+  // Heat map
   svg
     .selectAll("rect")
     .data(dataset)
@@ -67,13 +70,13 @@ function renderChart(data) {
     .attr("x", (d) => xScale(d["year"]) + padding)
     .attr("y", (d) => yScale(new Date().setMonth(d["month"] - 1)))
     .attr("width", 5)
-    .attr("height", height / 12)
+    .attr("height", (height - 100) / 10.8)
     .attr("fill", (d) => mapTemptoColor(d["variance"] + baseTemp))
     .attr("class", "cell")
     .attr("data-year", (d) => d["year"])
     .attr("data-month", (d) => d["month"] - 1)
     .attr("data-temp", (d) => d["variance"] * baseTemp)
-    .on("mouseover", function (d) {
+    .on("mouseover", (d) => {
       d3.select("#tooltip")
         .style("opacity", 0.8)
         .attr("data-year", d["year"])
@@ -171,18 +174,6 @@ function renderChart(data) {
     },
   ];
 
-  // const xLegendMin = d3.min(legendData, (d) => d["text"]);
-  // const xLegendMax = d3.max(legendData, (d) => d["text"]);
-
-  // const xLegendScale = d3
-  //   .scaleLinear()
-  //   .domain([xLegendMin, xLegendMax])
-  //   .range([0, width / 2]);
-
-  // const xLegendAxis = d3.axisBottom(xLegendScale);
-
-  // legend.append("g").attr("transform", "translate(20, 20)").call(xLegendAxis);
-
   legend
     .selectAll("g.legend")
     .data(legendData)
@@ -191,7 +182,7 @@ function renderChart(data) {
     .attr("transform", function (d, i) {
       return `translate(${i * 100}, 0)`;
     })
-    .each(function (d, i) {
+    .each(function (d) {
       d3.select(this)
         .append("rect")
         .attr("width", 30)
@@ -201,7 +192,7 @@ function renderChart(data) {
       d3.select(this)
         .append("text")
         .attr("text-anchor", "start")
-        .attr("x", 30 + 10)
+        .attr("x", 40)
         .attr("y", 15 / 2)
         .attr("dy", "0.35em")
         .text(d.text);
