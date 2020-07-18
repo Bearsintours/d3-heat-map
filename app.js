@@ -12,8 +12,8 @@ function renderChart(data) {
   const baseTemp = data["baseTemperature"];
 
   const padding = 60;
-  const height = 600;
-  const width = 1500;
+  const height = 12 * 35;
+  const width = 5 * Math.ceil(dataset.length / 12);
 
   const months = [
     "January",
@@ -31,34 +31,33 @@ function renderChart(data) {
   ];
 
   // Create svg
-  const svg = d3.select("#chart").append("svg").attr("with", width).attr("height", height).attr("id", "svg");
+  const svg = d3
+    .select("#chart")
+    .append("svg")
+    .attr("with", width + padding)
+    .attr("height", height + padding)
+    .attr("id", "svg");
 
   // yAxis
-  const yScale = d3
-    .scaleBand()
-    .domain(months)
-    .range([0, height - 100]);
+  const yScale = d3.scaleBand().domain(months).range([0, height]);
   const yAxis = d3.axisLeft(yScale).tickSizeOuter(0);
 
   svg
     .append("g")
     .attr("id", "y-axis")
-    .attr("transform", `translate(${padding - 1}, 5)`)
+    .attr("transform", `translate(${padding - 1}, 0)`)
     .call(yAxis);
 
   // xAxis
   const xMin = d3.min(dataset, (d) => d["year"]);
   const xMax = d3.max(dataset, (d) => d["year"]);
-  const xScale = d3
-    .scaleLinear()
-    .domain([xMin, xMax])
-    .range([0, width - 200]);
+  const xScale = d3.scaleLinear().domain([xMin, xMax]).range([0, width]);
   const xAxis = d3.axisBottom(xScale).tickFormat(d3.format("d")).tickSizeOuter(0);
 
   svg
     .append("g")
     .attr("id", "x-axis")
-    .attr("transform", `translate(${padding}, ${height - 95})`)
+    .attr("transform", `translate(${padding}, ${height})`)
     .call(xAxis.ticks((xMax - xMin) / 10));
 
   // Heat map
@@ -70,7 +69,7 @@ function renderChart(data) {
     .attr("x", (d) => xScale(d["year"]) + padding)
     .attr("y", (d) => yScale(months[d["month"] - 1]))
     .attr("width", 5)
-    .attr("height", (height - 100) / 10.8)
+    .attr("height", height / 12)
     .attr("fill", (d) => mapTemptoColor(d["variance"] + baseTemp))
     .attr("class", "cell")
     .attr("data-year", (d) => d["year"])
@@ -87,6 +86,7 @@ function renderChart(data) {
         .style("top", d3.event.pageY - 80 + "px")
     );
 
+  // For legend
   function mapTemptoColor(temp) {
     if (temp < 2.8) {
       return "rgb(49, 54, 149)";
